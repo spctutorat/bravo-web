@@ -122,7 +122,7 @@ function Form() {
 			<h2>Compte Discord</h2>
 			{state.discordLoading ? (
 				<button className="login-discord" disabled>
-					Chargement...
+					Chargement... ⌛
 				</button>
 			) : state.name ? (
 				<button
@@ -132,14 +132,14 @@ function Form() {
 						setState({ ...state, code: undefined, name: undefined });
 					}}
 				>
-					Connecté en tant que {state.name}
+					Connecté en tant que {state.name} ✅
 				</button>
 			) : (
 				<a
 					className="login-discord"
 					href="https://discord.com/api/oauth2/authorize?client_id=886700015072968734&redirect_uri=http%3A%2F%2Flocalhost%3A3000&response_type=code&scope=identify"
 				>
-					Se connecter avec Discord
+					Se connecter avec Discord 🔗
 				</a>
 			)}
 			<h2>Compte EcoleDirecte</h2>
@@ -163,7 +163,10 @@ function Form() {
 				aria-label="Mot de passe"
 				placeholder="Mot de passe"
 			/>
-			<button type="submit" disabled={!state.code}>
+			<button
+				type="submit"
+				disabled={!(state.code && state.username && state.password)}
+			>
 				Prouver l'identité
 			</button>
 		</form>
