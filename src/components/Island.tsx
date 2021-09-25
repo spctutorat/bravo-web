@@ -6,6 +6,7 @@ function Island() {
 	return (
 		<main className="island">
 			<h1>Identification</h1>
+			<hr />
 			<Form />
 		</main>
 	);
@@ -13,23 +14,32 @@ function Island() {
 
 type FormState = {
 	code?: string;
+	token?: string;
 	username: string;
 	password: string;
 	name?: string;
+	discordLoading: boolean;
 	loading: boolean;
 };
 
 function Form() {
 	const params = new URLSearchParams(window.location.search);
+
 	const [state, setState] = useState<FormState>({
-		username: params.get("username") || "",
-		password: params.get("password") || "",
-		code: params.get("code") || undefined,
-		loading: true,
+		username: "",
+		password: "",
+		discordLoading: true,
+		loading: false,
 	});
 
+	const paramsCode = params.get("code");
+	if (paramsCode) localStorage.setItem("code", paramsCode);
+
+	if (!state.code && localStorage.getItem("code"))
+		setState({ ...state, code: localStorage.getItem("code") || undefined });
+
 	// Clean URL params
-	window.history.replaceState(null, "", window.location.pathname);
+	window.history.replaceState({}, document.title, "/");
 
 	function handleChange(e: React.FormEvent<HTMLInputElement>) {
 		const key = e.currentTarget.name as "username" | "password";
@@ -40,37 +50,87 @@ function Form() {
 		});
 	}
 
+	async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+		e.preventDefault();
+		if (state.loading) return;
+		setState({ ...state, loading: true });
+
+		const { username, password, code, token } = state;
+		const res = await fetch("http://localhost:3001/login", {
+			method: "POST",
+			body: JSON.stringify({ username, password, code, token }),
+			headers: {
+				"Content-Type": "application/json",
+			},
+		});
+
+		console.log({ res: await res.text() });
+
+		setState({ ...state, loading: false });
+	}
+
 	useEffect(() => {
 		async function doStuff() {
 			//TODO Get code if any
 			if (state.code) {
 				// Send code to backend to get info
-				console.log(state.code);
+				const res = await fetch(
+					`http://localhost:3001/getUser?code=${state.code}`
+				);
+				if (res.status === 200) {
+					const json = await res.json();
+					const token = json.token.refresh_token;
+					setState({ ...state, name: json.user.username, token: token });
+					localStorage.setItem("name", json.user.username);
+					localStorage.setItem("token", token);
+					if (!json) {
+						localStorage.clear();
+						setState({ ...state, code: undefined, name: undefined });
+					}
+				} else {
+					localStorage.clear();
+					setState({ ...state, code: undefined, name: undefined });
+				}
 			}
-			setState({ ...state, loading: false });
+			setState({ ...state, discordLoading: false });
 		}
 		doStuff();
 	}, []);
 
+	if (!state.code && !localStorage.getItem("code")) localStorage.clear();
+
+	if (!state.name && localStorage.getItem("name"))
+		setState({ ...state, name: localStorage.getItem("name") as string });
+
+	if (!state.token && localStorage.getItem("token"))
+		setState({ ...state, token: localStorage.getItem("token") as string });
+
 	return (
-		<form>
-			{state.loading ? (
+		<form onSubmit={handleSubmit}>
+			<h2>Compte Discord</h2>
+			{state.discordLoading ? (
 				<button className="login-discord" disabled>
 					Chargement...
 				</button>
-			) : (
+			) : state.name ? (
 				<button
 					className="login-discord"
-					onClick={() =>
-						window.open(
-							"https://discord.com/api/oauth2/authorize?client_id=886700015072968734&redirect_uri=http%3A%2F%2Flocalhost%3A3000&response_type=code&scope=identify",
-							"_self"
-						)
-					}
+					onClick={() => {
+						localStorage.clear();
+						setState({ ...state, code: undefined, name: undefined });
+					}}
+				>
+					Connecté en tant que {state.name}
+				</button>
+			) : (
+				<a
+					className="login-discord"
+					href="https://discord.com/api/oauth2/authorize?client_id=886700015072968734&redirect_uri=http%3A%2F%2Flocalhost%3A3000&response_type=code&scope=identify"
 				>
 					Se connecter avec Discord
-				</button>
+				</a>
 			)}
+			<h2>Compte EcoleDirecte</h2>
 			<input
 				className="form-control"
 				id="username"
@@ -91,7 +151,9 @@ function Form() {
 				aria-label="Mot de passe"
 				placeholder="Mot de passe"
 			/>
-			<button type="submit">Vérifier</button>
+			<button type="submit" disabled={!state.code}>
+				Prouver l'identité
+			</button>
 		</form>
 	);
 }
