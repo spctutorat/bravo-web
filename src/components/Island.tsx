@@ -41,6 +41,16 @@ function Form() {
 	// Clean URL params
 	window.history.replaceState({}, document.title, "/");
 
+	function clean() {
+		localStorage.clear();
+		setState({
+			...state,
+			code: undefined,
+			name: undefined,
+			token: undefined,
+		});
+	}
+
 	function handleChange(e: React.FormEvent<HTMLInputElement>) {
 		const key = e.currentTarget.name as "username" | "password";
 		const val = e.currentTarget.value;
@@ -64,9 +74,15 @@ function Form() {
 			},
 		});
 
-		console.log({ res: await res.text() });
+		clean();
 
-		setState({ ...state, loading: false });
+		setState({
+			...state,
+			name: undefined,
+			code: undefined,
+			token: undefined,
+			loading: false,
+		});
 	}
 
 	useEffect(() => {
@@ -83,13 +99,9 @@ function Form() {
 					setState({ ...state, name: json.user.username, token: token });
 					localStorage.setItem("name", json.user.username);
 					localStorage.setItem("token", token);
-					if (!json) {
-						localStorage.clear();
-						setState({ ...state, code: undefined, name: undefined });
-					}
+					if (!json) clean();
 				} else {
-					localStorage.clear();
-					setState({ ...state, code: undefined, name: undefined });
+					clean();
 				}
 			}
 			setState({ ...state, discordLoading: false });
