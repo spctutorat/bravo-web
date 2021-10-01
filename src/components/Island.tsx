@@ -83,6 +83,12 @@ function Form() {
 			token: undefined,
 			loading: false,
 		});
+
+		if (res.status === 200) {
+			alert(
+				"Vous avez été identifié avec succès. Un message privé vous a été envoyé sur Discord."
+			);
+		}
 	}
 
 	useEffect(() => {
