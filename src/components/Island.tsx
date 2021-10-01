@@ -88,12 +88,14 @@ function Form() {
 			alert(
 				"Vous avez été identifié avec succès. Un message privé vous a été envoyé sur Discord."
 			);
+		} else {
+			alert("Erreur : " + (await res.json()).message);
 		}
 	}
 
 	useEffect(() => {
 		async function doStuff() {
-			//TODO Get code if any
+			// Get code if any
 			if (state.code) {
 				// Send code to backend to get info
 				const res = await fetch(
