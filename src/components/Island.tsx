@@ -1,6 +1,5 @@
-import { stringify } from "querystring";
-import React, { useEffect, useState } from "react";
-import "./Island.scss";
+import React, { useCallback, useEffect, useState } from 'react';
+import './Island.scss';
 
 function Island() {
 	return (
@@ -26,22 +25,21 @@ function Form() {
 	const params = new URLSearchParams(window.location.search);
 
 	const [state, setState] = useState<FormState>({
-		username: "",
-		password: "",
+		username: '',
+		password: '',
 		discordLoading: true,
 		loading: false,
 	});
 
-	const paramsCode = params.get("code");
-	if (paramsCode) localStorage.setItem("code", paramsCode);
+	const paramsCode = params.get('code');
+	if (paramsCode) localStorage.setItem('code', paramsCode);
 
-	if (!state.code && localStorage.getItem("code"))
-		setState({ ...state, code: localStorage.getItem("code") || undefined });
+	if (!state.code && localStorage.getItem('code'))
+		setState({ ...state, code: localStorage.getItem('code') || undefined });
 
 	// Clean URL params
-	window.history.replaceState({}, document.title, "/");
-
-	function clean() {
+	window.history.replaceState({}, document.title, '/');
+	const clean = useCallback(() => {
 		localStorage.clear();
 		setState({
 			...state,
@@ -49,10 +47,10 @@ function Form() {
 			name: undefined,
 			token: undefined,
 		});
-	}
+	}, [state]);
 
 	function handleChange(e: React.FormEvent<HTMLInputElement>) {
-		const key = e.currentTarget.name as "username" | "password";
+		const key = e.currentTarget.name as 'username' | 'password';
 		const val = e.currentTarget.value;
 		setState({
 			...state,
@@ -66,11 +64,12 @@ function Form() {
 		setState({ ...state, loading: true });
 
 		const { username, password, code, token } = state;
-		const res = await fetch("http://localhost:3001/login", {
-			method: "POST",
+		const url = process.env.REACT_APP_API_BASE + '/login';
+		const res = await fetch(url, {
+			method: 'POST',
 			body: JSON.stringify({ username, password, code, token }),
 			headers: {
-				"Content-Type": "application/json",
+				'Content-Type': 'application/json',
 			},
 		});
 
@@ -86,10 +85,10 @@ function Form() {
 
 		if (res.status === 200) {
 			alert(
-				"Vous avez été identifié avec succès. Un message privé vous a été envoyé sur Discord."
+				'Vous avez été identifié avec succès. Un message privé vous a été envoyé sur Discord.'
 			);
 		} else {
-			alert("Erreur : " + (await res.json()).message);
+			alert('Erreur : ' + (await res.json()).message);
 		}
 	}
 
@@ -98,15 +97,15 @@ function Form() {
 			// Get code if any
 			if (state.code) {
 				// Send code to backend to get info
-				const res = await fetch(
-					`http://localhost:3001/getUser?code=${state.code}`
-				);
+				const url =
+					process.env.REACT_APP_API_BASE + `/getUser?code=${state.code}`;
+				const res = await fetch(url);
 				if (res.status === 200) {
 					const json = await res.json();
 					const token = json.token.refresh_token;
 					setState({ ...state, name: json.user.username, token: token });
-					localStorage.setItem("name", json.user.username);
-					localStorage.setItem("token", token);
+					localStorage.setItem('name', json.user.username);
+					localStorage.setItem('token', token);
 					if (!json) clean();
 				} else {
 					clean();
@@ -115,15 +114,15 @@ function Form() {
 			setState({ ...state, discordLoading: false });
 		}
 		doStuff();
-	}, []);
+	}, [clean, state]);
 
-	if (!state.code && !localStorage.getItem("code")) localStorage.clear();
+	if (!state.code && !localStorage.getItem('code')) localStorage.clear();
 
-	if (!state.name && localStorage.getItem("name"))
-		setState({ ...state, name: localStorage.getItem("name") as string });
+	if (!state.name && localStorage.getItem('name'))
+		setState({ ...state, name: localStorage.getItem('name') as string });
 
-	if (!state.token && localStorage.getItem("token"))
-		setState({ ...state, token: localStorage.getItem("token") as string });
+	if (!state.token && localStorage.getItem('token'))
+		setState({ ...state, token: localStorage.getItem('token') as string });
 
 	return (
 		<form onSubmit={handleSubmit}>
@@ -145,7 +144,7 @@ function Form() {
 			) : (
 				<a
 					className="login-discord"
-					href="https://discord.com/api/oauth2/authorize?client_id=886700015072968734&redirect_uri=http%3A%2F%2Flocalhost%3A3000&response_type=code&scope=identify"
+					href={process.env.REACT_APP_DISCORD_AUTH_URL}
 				>
 					Se connecter avec Discord 🔗
 				</a>

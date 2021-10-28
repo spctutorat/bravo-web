@@ -1,7 +1,7 @@
-import React from "react";
-import "./App.scss";
+import React from 'react';
+import './App.scss';
 
-import Island from "./components/Island";
+import Island from './components/Island';
 
 function App() {
 	return (
