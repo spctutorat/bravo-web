@@ -39,6 +39,7 @@ function Form() {
 
 	// Clean URL params
 	window.history.replaceState({}, document.title, '/');
+
 	const clean = useCallback(() => {
 		localStorage.clear();
 		setState({
@@ -114,7 +115,8 @@ function Form() {
 			setState({ ...state, discordLoading: false });
 		}
 		doStuff();
-	}, [clean, state]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	if (!state.code && !localStorage.getItem('code')) localStorage.clear();
 
